@@ -213,7 +213,10 @@ class Agent:
     def __init__(self):
         self.temp_map = Map()
         self.map = self.temp_map.getMap()
-        self.moveset = [1, 2, 3, 4] #1 move, 2 shoot, 3 pick, 4 climb out
+        self.move = 1
+        self.shoot = 2
+        self.pick = 3
+        self.sur = 4
         self.AKB = Knowlegdesbase((len(self.map), len(self.map[0])))
         self.AKB.makeFormula()
         self.visited = []
@@ -249,21 +252,23 @@ class Agent:
             next_step = self.doing.pop()
         except:
             if self.climb_out == False:
+                next_step = self.spawn
                 self.climb_out = True
-                return self.moveset[3], cur
 
         if next_step == None:
             return 0, None
 
         path = self.Move(cur, next_step, danger_pos)
+        if path == None:
+            return (self.sur, self.spawn)
         if path != next_step:
             self.doing.append(next_step)
-        return (self.moveset[0], path)
+        return (self.move, path)
 
     def getAgentAction(self, pos):
         cur = self.map[pos[0]][pos[1]]
         if cur == 'G' or cur == 'GB' or cur == 'BG' or cur == 'GS' or cur == 'SG' or cur == 'GBS' or cur == 'GSB' or cur == 'BGS' or cur == 'BSG' or cur == 'SGB' or cur == 'SBG':
-            return (self.moveset[2], None, None)
+            return (self.pick, None, None)
         
         self.Checksafe(pos)
 
@@ -273,7 +278,7 @@ class Agent:
                     check, wumpus_pos = common_adj(pos, w, len(self.map[0]), len(self.map), self.visited)
                     if check == True:
                         list_need_to_del = [wumpus_pos, pos, w]
-                        return (self.moveset[1], [wumpus_pos], list_need_to_del)
+                        return (self.shoot, [wumpus_pos], list_need_to_del)
 
         safe_pos = []
         danger_pos = []
@@ -291,9 +296,9 @@ class Agent:
             safe_pos.append(temp)
 
         if len(safe_pos) > 0 and len(danger_pos) > 0:
-            return (self.moveset[0], safe_pos, danger_pos)
+            return (self.move, safe_pos, danger_pos)
         elif len(safe_pos) > 0:
-            return (self.moveset[0], safe_pos, None)
+            return (self.move, safe_pos, None)
         elif len(danger_pos) > 0:
             return (0, None, danger_pos)
         else:
@@ -318,7 +323,7 @@ class Agent:
     def Move(self, cur, next, danger_pos):
         temp = self.map
         path = A_star(temp, cur, next, danger_pos)
-        if len(path) >= 0:
+        if len(path) > 0:
             self.agent_pos = path[0]
             return path[0]
         return None
