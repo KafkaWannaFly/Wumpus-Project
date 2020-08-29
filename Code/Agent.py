@@ -6,9 +6,9 @@ from pysat.solvers import Glucose3
 
 class Map:
     def __init__(self):
-        map, agen_pos = readFile()
+        map, agent_pos = readFile()
         self.map = map
-        self.a_p = agen_pos
+        self.a_p = agent_pos
         self.width = len(map)
         self.height = len(map[0])
         self.cave = self.a_p
@@ -28,17 +28,20 @@ class Map:
 def readFile():
     path = "map1.txt"
     file = open(path, "r")
-    size = int(file.readline())
+    size = file.readline()
+    size = int(size.split()[0])
+
     map = []
-    agent_pos: tuple
-    for i in file:
-        temp = []
-        for j in i:
-            if j != '.' and j != '\n':
-                temp.append(j)
-            if j == 'A':
+    for i in range(size):
+        line = file.readline().replace('\n', '')
+        map.append(line.split('.'))
+
+    for i in range(len(map)):
+        for j in range(len(map[0])):
+            if map[i][j] == 'A':
                 agent_pos = (i, j)
-        map.append(temp)
+                break
+
     return map, agent_pos
 
 def add_adjacent(matrix, width, height):
@@ -48,11 +51,31 @@ def add_adjacent(matrix, width, height):
         for j in range(width):
             temp = []
             for x in k:
-                tnp_pos = (i + x[0], j + x[1])
+                tmp_pos = (i + x[0], j + x[1])
                 if validCell(tmp_pos[0], tmp_pos[1], (width, height)):
-                    temp.append(matrix[tmp_pos[0]][tmp_pos[1]])
+                    temp.append(tmp_pos)
             dict[(i, j)] = temp
     return dict
+
+def common_adj(pos_1, pos_2, width, height, visited):
+    k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+    temp1 = []
+    for x in k:
+        tmp_pos = (pos_1[0] + x[0], pos_1[1] + x[1])
+        if validCell(tmp_pos[0], tmp_pos[1], (width, height)):
+            temp1.append(tmp_pos)
+    temp2 = []
+    for x in k:
+        tmp_pos = (pos_2[0] + x[0], pos_2[1] + x[1])
+        if validCell(tmp_pos[0], tmp_pos[1], (width, height)):
+            temp2.append(tmp_pos)
+
+    for i in temp1:
+        for j in temp2:
+            if i == j and i not in visited:
+                return True, i 
+
+    return False, None
 
 def manhattan_distance(current_pos, food):
     return sum(map(lambda x, y: abs(x - y), current_pos, food))
@@ -69,12 +92,12 @@ def backtracking(current, parent_list):
 
     return path
 
-def A_star(maze, cur_pos, des_pos):
+def A_star(maze, cur_pos, des_pos, danger_pos):
     frontier = []
     explored = []
     parent_nodes = {}
     cost = 0
-    adjacent_nodes = add_adjacent(maze, len(maze), len(mae[0]))
+    adjacent_nodes = add_adjacent(maze, len(maze), len(maze[0]))
 
     start_node = (cost + manhattan_distance(cur_pos, des_pos), cur_pos)
     parent_nodes[cur_pos] = None
@@ -95,6 +118,10 @@ def A_star(maze, cur_pos, des_pos):
                     is_explored = True
                     break
 
+            if danger_pos != None:
+                if current_node in danger_pos:
+                    continue
+
             if is_explored:
                 continue
 
@@ -102,6 +129,7 @@ def A_star(maze, cur_pos, des_pos):
 
             if current_node == des_pos:
                 final_path = backtracking(current_node, parent_nodes)
+                final_path.pop()
                 return final_path[::-1]
 
             for adjacent in adjacent_nodes[current_node]:
@@ -116,6 +144,7 @@ def validCell(i, j, shape):
 class Knowlegdesbase:
     def __init__(self, maps_size):
         self.DangerFormula = []
+        self.pitFormula = []
         self.wumpus = Glucose3()
         self.pit = Glucose3()
         self.size = maps_size
@@ -128,16 +157,17 @@ class Knowlegdesbase:
 
     def makeFormula(self):
         k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
-        map = getsize()
+
         for i in range(self.size[0]):
             for j in range(self.size[1]):
                 cur = self.pos_to_num((i, j), 0, -1)
                 for x in k:
                     temp = (i + x[0], j + x[1])
                     if validCell(temp[0], temp[1], self.size):
-                        temp2 = pos_to_num((temp[0], temp[1]), 1, 1)
+                        temp2 = self.pos_to_num((temp[0], temp[1]), 1, 1)
                         self.DangerFormula.append([cur, temp2])
         self.wumpus.append_formula(self.DangerFormula)
+        self.pitFormula = self.DangerFormula
         self.pit.append_formula(self.DangerFormula)
 
     def newKB(self, pos, breeze, stench):
@@ -153,37 +183,60 @@ class Knowlegdesbase:
             temp = self.pos_to_num(pos, 1, 1)
         else:
             temp = self.pos_to_num(pos, 1, -1)
+        self.pitFormula.append([temp])
         self.pit.add_clause([temp])
 
     def showKB(self):
         return self.DangerFormula
 
-    def Remove(self):
-        #Dùng cho bắn, chưa bắn nên chưa biết làm
-        pass
+    def Remove(self, list):
+        wumpus = list.pop()
+        self.DangerFormula.append([self.pos_to_num(wumpus, 0, -1)])
+
+        for i in list:
+            stench = self.pos_to_num(i, 1, 1)
+            if stench in self.DangerFormula:
+                self.DangerFormula.remove([stench])
+            self.DangerFormula.append(-1 * stench)
+
+        self.wumpus.delete()
+        self.wumpus.append_formula(self.DangerFormula)
+
+    def make_wumpus_have_B_safe(self, list):
+        wumpus = list.pop()
+        self.pitFormula.append([self.pos_to_num(wumpus, 0, -1)])
+
+        for i in list:
+            stench = self.pos_to_num(i, 1, 1)
+            if stench in self.DangerFormula:
+                self.pitFormula.remove([stench])
+            self.pitFormula.append(-1 * stench)
+
+        self.pit.delete()
+        self.pit.append_formula(self.pitFormula)
 
     def pos_to_num(self, pos, is_stench, s):
-        return int(s * (pos[1] * self.size[0] + pos[0] + 1 + is_stench * pos[0] * pos[1]))
+        return int(s * (pos[1] * self.size[0] + pos[0] + 1 + is_stench * self.size[0] * self.size[1]))
 
 class Agent:
-    def _init_(self):
-        self.map = Map.getMap()
-        self.temp_map = Map
+    def __init__(self):
+        self.temp_map = Map()
+        self.map = self.temp_map.getMap()
         self.moveset = [1, 2, 3, 4] #1 move, 2 shoot, 3 pick, 4 climb out
         self.AKB = Knowlegdesbase((len(self.map), len(self.map[0])))
         self.AKB.makeFormula()
         self.visited = []
         self.doing = []
-        self.where_e_w = []
+        self.list_stench = []
         self.climb_out = False
         self.point = 0
         self.agent_pos = self.temp_map.getAgentPos()
         self.spawn = self.temp_map.getAgentPos()
 
-    def Solving(self, pos):
+    def Solving(self):
         cur = self.agent_pos
         self.visited.append(cur)
-        do, safe_pos = getAgentAction(cur)
+        do, safe_pos, danger_pos = self.getAgentAction(cur)
         if do != 0:
             if do == 3:
                 self.Pick_gold(cur, self.map[cur[0]][cur[1]])
@@ -192,6 +245,17 @@ class Agent:
                 for x in safe_pos:
                     if x not in self.doing:
                         self.doing.append(x)
+            elif do == 2:
+                S_B = []
+                wumpus = safe_pos.pop()
+                S_B.append(wumpus)
+                for i in danger_pos:
+                    if self.map[i[0]][i[1]] == 'BS' or self.map[i[0]][i[1]] == 'SB' or self.map[i[0]][i[1]] == 'GBS' or self.map[i[0]][i[1]] == 'GSB' or self.map[i[0]][i[1]] == 'SGB' or self.map[i[0]][i[1]] == 'SBG' or self.map[i[0]][i[1]] == 'BGS' or self.map[i[0]][i[1]] == 'BSG':
+                        S_B.append(i)
+                self.Shoot(wumpus, self.map[wumpus[0]][wumpus[1]])
+                self.AKB.Remove(danger_pos)
+                self.AKB.make_wumpus_have_B_safe(S_B)
+                return (do, cur)
 
         next_step = None
         try:
@@ -204,7 +268,7 @@ class Agent:
         if next_step == None:
             return 0, None
 
-        path = Move(cur, next_step)
+        path = self.Move(cur, next_step, danger_pos)
         if path != next_step:
             self.doing.append(next_step)
         return (self.moveset[0], path)
@@ -212,57 +276,96 @@ class Agent:
     def getAgentAction(self, pos):
         cur = self.map[pos[0]][pos[1]]
         if cur == 'G' or cur == 'GB' or cur == 'BG' or cur == 'GS' or cur == 'SG' or cur == 'GBS' or cur == 'GSB' or cur == 'BGS' or cur == 'BSG' or cur == 'SGB' or cur == 'SBG':
-            return (self.moveset[2], None)
+            return (self.moveset[2], None, None)
         
         self.Checksafe(pos)
+
+        if cur == 'S' or cur == 'SB' or cur == 'BS' or cur == 'GS' or cur == 'SG' or cur == 'GBS' or cur == 'GSB' or cur == 'BGS' or cur == 'BSG' or cur == 'SGB' or cur == 'SBG':
+            if len(self.list_stench) > 1: 
+                for w in self.list_stench:
+                    check, wumpus_pos = common_adj(pos, w, len(self.map[0]), len(self.map), self.visited)
+                    if check == True:
+                        list_need_to_del = [wumpus_pos, pos, w]
+                        return (self.moveset[1], [wumpus_pos], list_need_to_del)
+
         safe_pos = []
+        danger_pos = []
         k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         for i in k:
             temp = (pos[0] + i[0], pos[1] + i[1])
             if temp in self.visited or not validCell(temp[0], temp[1], (len(self.map), len(self.map[0]))):
                 continue
             if self.AKB.is_pit(temp):
+                danger_pos.append(temp)
                 continue
             elif self.AKB.is_wumpus(temp):
-                self.where_e_w.append(temp)
+                danger_pos.append(temp)
                 continue
             safe_pos.append(temp)
 
-        if len(safe_pos) > 0:
-            return (self.moveset[0], safe_pos)
-        return 0, None
+        if len(safe_pos) > 0 and len(danger_pos) > 0:
+            return (self.moveset[0], safe_pos, danger_pos)
+        elif len(safe_pos) > 0:
+            return (self.moveset[0], safe_pos, None)
+        elif len(danger_pos) > 0:
+            return (0, None, danger_pos)
+        else:
+            return 0, None, None
+
+    def createAgent(self):
+        return self.agent_pos, self.point
 
     def Checksafe(self, pos):
-        cur = []
+        cur = pos
         B = False
         S = False
         if self.map[cur[0]][cur[1]] == 'B' or self.map[cur[0]][cur[1]] == 'SB' or self.map[cur[0]][cur[1]] == 'BS' or self.map[cur[0]][cur[1]] == 'GB' or self.map[cur[0]][cur[1]] == 'BG' or self.map[cur[0]][cur[1]] == 'GBS' or self.map[cur[0]][cur[1]] == 'GSB' or self.map[cur[0]][cur[1]] == 'SGB' or self.map[cur[0]][cur[1]] == 'SBG' or self.map[cur[0]][cur[1]] == 'BGS'  or self.map[cur[0]][cur[1]] == 'BSG':
             B = True
         if self.map[cur[0]][cur[1]] == 'S' or self.map[cur[0]][cur[1]] == 'SB' or self.map[cur[0]][cur[1]] == 'BS' or self.map[cur[0]][cur[1]] == 'GS' or self.map[cur[0]][cur[1]] == 'SG' or self.map[cur[0]][cur[1]] == 'GBS' or self.map[cur[0]][cur[1]] == 'GSB' or self.map[cur[0]][cur[1]] == 'SGB' or self.map[cur[0]][cur[1]] == 'SBG' or self.map[cur[0]][cur[1]] == 'BGS'  or self.map[cur[0]][cur[1]] == 'BSG':
             S = True
+            if cur not in self.list_stench:
+                self.list_stench.append(cur)
+                
         self.AKB.newKB(cur, B, S)
 
-    def Move(self, cur, next):
-        temp = self.map.getMap()
-        path = A_star(temp, cur, next)
+    def Move(self, cur, next, danger_pos):
+        temp = self.map
+        path = A_star(temp, cur, next, danger_pos)
         if len(path) >= 0:
             self.agent_pos = path[0]
             return path[0]
         return None
 
-    def Shoot(self):
-        #Chưa biết làm
-        pass
+    def Shoot(self, pos, state):
+        x = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        if state == 'W':
+            self.temp_map.updateMap(pos, '-')
+            for k in x:
+                if validCell(pos[0] + k[0], pos[1] + k[1], (len(self.map), len(self.map[0]))):
+                    if self.map[pos[0] + k[0]][pos[1] + k[1]] == 'S':
+                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), '-')
+                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'BS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SB':
+                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'B')
+                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'GS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SG':
+                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'G')
+                    else:
+                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'GB')
+                    if (pos[0] + k[0], pos[1] + k[1]) in self.list_stench:
+                        self.list_stench.remove((pos[0] + k[0], pos[1] + k[1]))
+                else:
+                    continue
+        else:
+            pass
 
     def Pick_gold(self, pos, state):
         if state == 'G':
-            self.map.updateMap(pos, '-')
+            self.temp_map.updateMap(pos, '-')
         elif state == 'GB' or state == 'BG':
-            self.map.updateMap(pos, 'B')
+            self.temp_map.updateMap(pos, 'B')
         elif state == 'GS' or state == 'SG':
-            self.map.updateMap(pos, 'S')
+            self.temp_map.updateMap(pos, 'S')
         else:
-            self.map.updateMap(pos, 'GS')
+            self.temp_map.updateMap(pos, 'BS')
 
     def calPoint(self):
         move, next_step = self.Solving()

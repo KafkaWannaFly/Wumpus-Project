@@ -4,6 +4,22 @@ from Code.AppData import *
 from Code.Game import Game
 from Code.Player import Player
 
+def test_the_agent():
+    a = Agent()
+    x, y = a.createAgent()
+    print(x, end = "\n")
+    print(y, end = "\n")
+
+    while True:
+        x, y = a.calPoint()
+        if x != None:
+            print(x, end = "\n")
+            print(y, end = "\n")
+            if x[0] == 2:
+                for i in a.map:
+                    print(i, end='\n')
+        else:
+            break
 
 def main():
     pygame.init()
