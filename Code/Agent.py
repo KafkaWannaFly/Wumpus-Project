@@ -144,7 +144,6 @@ def validCell(i, j, shape):
 class Knowlegdesbase:
     def __init__(self, maps_size):
         self.DangerFormula = []
-        self.pitFormula = []
         self.wumpus = Glucose3()
         self.pit = Glucose3()
         self.size = maps_size
@@ -152,8 +151,11 @@ class Knowlegdesbase:
     def is_wumpus(self, pos):
         return self.wumpus.solve([self.pos_to_num(pos, 0, 1)])
 
-    def is_pit(self, pos):
-        return self.pit.solve([self.pos_to_num(pos, 0, 1)])
+    def is_pit(self, pos, list_wumpus):
+        if pos in list_wumpus:
+            return False
+        else:
+            return self.pit.solve([self.pos_to_num(pos, 0, 1)])
 
     def makeFormula(self):
         k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -167,7 +169,6 @@ class Knowlegdesbase:
                         temp2 = self.pos_to_num((temp[0], temp[1]), 1, 1)
                         self.DangerFormula.append([cur, temp2])
         self.wumpus.append_formula(self.DangerFormula)
-        self.pitFormula = self.DangerFormula
         self.pit.append_formula(self.DangerFormula)
 
     def newKB(self, pos, breeze, stench):
@@ -183,7 +184,6 @@ class Knowlegdesbase:
             temp = self.pos_to_num(pos, 1, 1)
         else:
             temp = self.pos_to_num(pos, 1, -1)
-        self.pitFormula.append([temp])
         self.pit.add_clause([temp])
 
     def showKB(self):
@@ -202,19 +202,6 @@ class Knowlegdesbase:
         self.wumpus.delete()
         self.wumpus.append_formula(self.DangerFormula)
 
-    def make_wumpus_have_B_safe(self, list):
-        wumpus = list.pop()
-        self.pitFormula.append([self.pos_to_num(wumpus, 0, -1)])
-
-        for i in list:
-            stench = self.pos_to_num(i, 1, 1)
-            if stench in self.DangerFormula:
-                self.pitFormula.remove([stench])
-            self.pitFormula.append(-1 * stench)
-
-        self.pit.delete()
-        self.pit.append_formula(self.pitFormula)
-
     def pos_to_num(self, pos, is_stench, s):
         return int(s * (pos[1] * self.size[0] + pos[0] + 1 + is_stench * self.size[0] * self.size[1]))
 
@@ -228,6 +215,7 @@ class Agent:
         self.visited = []
         self.doing = []
         self.list_stench = []
+        self.wumpus_pos = []
         self.climb_out = False
         self.point = 0
         self.agent_pos = self.temp_map.getAgentPos()
@@ -246,15 +234,11 @@ class Agent:
                     if x not in self.doing:
                         self.doing.append(x)
             elif do == 2:
-                S_B = []
                 wumpus = safe_pos.pop()
-                S_B.append(wumpus)
-                for i in danger_pos:
-                    if self.map[i[0]][i[1]] == 'BS' or self.map[i[0]][i[1]] == 'SB' or self.map[i[0]][i[1]] == 'GBS' or self.map[i[0]][i[1]] == 'GSB' or self.map[i[0]][i[1]] == 'SGB' or self.map[i[0]][i[1]] == 'SBG' or self.map[i[0]][i[1]] == 'BGS' or self.map[i[0]][i[1]] == 'BSG':
-                        S_B.append(i)
+                self.wumpus_pos.append(wumpus)
                 self.Shoot(wumpus, self.map[wumpus[0]][wumpus[1]])
                 self.AKB.Remove(danger_pos)
-                self.AKB.make_wumpus_have_B_safe(S_B)
+                print(self.AKB.is_pit(wumpus, self.wumpus_pos))
                 return (do, cur)
 
         next_step = None
@@ -295,7 +279,7 @@ class Agent:
             temp = (pos[0] + i[0], pos[1] + i[1])
             if temp in self.visited or not validCell(temp[0], temp[1], (len(self.map), len(self.map[0]))):
                 continue
-            if self.AKB.is_pit(temp):
+            if self.AKB.is_pit(temp, self.wumpus_pos):
                 danger_pos.append(temp)
                 continue
             elif self.AKB.is_wumpus(temp):
