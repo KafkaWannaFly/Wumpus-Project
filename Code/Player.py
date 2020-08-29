@@ -1,17 +1,21 @@
 import pygame
+from Code.Agent import Agent
+from Code.EnvironmentSprites import EnvironmentSprite
 
 
-class Player(object):
-    def __init__(self, sprite_path):
-        self.sprite = pygame.image.load(sprite_path)
-        self.rect = self.sprite.get_rect()
-        self.rect[0], self.rect[1] = (0, 450)
+class Player(EnvironmentSprite):
+    def __init__(self, sprite_path, pos):
+        EnvironmentSprite.__init__(self, sprite_path, pos)
+        # self.image = pygame.image.load(sprite_path).convert()
+        # self.rect = self.image.get_rect()
+        self.agent = Agent()
 
     def get_next_move(self):
-        pass
+        self.agent.calPoint()  # (move, next_step), self.point
 
-    def move_to(self, direction):
-        pass
+    def get_pos(self):
+        var = self.agent.createAgent()[0]
+        return var[0]
 
     def shot_arrow(self, direction):
         pass

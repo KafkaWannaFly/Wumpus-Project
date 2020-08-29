@@ -4,6 +4,9 @@ import sys
 from heapq import heappush, heappop
 from pysat.solvers import Glucose3
 
+from Code.AppData import MapData
+
+
 class Map:
     def __init__(self):
         map, agent_pos = readFile()
@@ -25,9 +28,10 @@ class Map:
     def updateMap(self, pos, status):
         self.map[pos[0]][pos[1]] = status
 
+
 def readFile():
     path = "map1.txt"
-    file = open(path, "r")
+    file = open(MapData.path, "r")
     size = file.readline()
     size = int(size.split()[0])
 
@@ -44,6 +48,7 @@ def readFile():
 
     return map, agent_pos
 
+
 def add_adjacent(matrix, width, height):
     dict = {}
     k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -56,6 +61,7 @@ def add_adjacent(matrix, width, height):
                     temp.append(tmp_pos)
             dict[(i, j)] = temp
     return dict
+
 
 def common_adj(pos_1, pos_2, width, height, visited):
     k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -73,12 +79,14 @@ def common_adj(pos_1, pos_2, width, height, visited):
     for i in temp1:
         for j in temp2:
             if i == j and i not in visited:
-                return True, i 
+                return True, i
 
     return False, None
 
+
 def manhattan_distance(current_pos, food):
     return sum(map(lambda x, y: abs(x - y), current_pos, food))
+
 
 def backtracking(current, parent_list):
     path = []
@@ -91,6 +99,7 @@ def backtracking(current, parent_list):
             break
 
     return path
+
 
 def A_star(maze, cur_pos, des_pos, danger_pos):
     frontier = []
@@ -108,13 +117,13 @@ def A_star(maze, cur_pos, des_pos, danger_pos):
         if not frontier:
             return None
         else:
-            tmp_tuple = heappop(frontier)  
+            tmp_tuple = heappop(frontier)
             current_node = tmp_tuple[1]
             cost = tmp_tuple[0] - manhattan_distance(current_node, des_pos)
 
             is_explored = False
             for explored_node in explored:
-                if(current_node == explored_node):
+                if (current_node == explored_node):
                     is_explored = True
                     break
 
@@ -140,6 +149,7 @@ def A_star(maze, cur_pos, des_pos, danger_pos):
 
 def validCell(i, j, shape):
     return 0 <= i and i < shape[0] and 0 <= j and j < shape[1]
+
 
 class Knowlegdesbase:
     def __init__(self, maps_size):
@@ -205,11 +215,12 @@ class Knowlegdesbase:
     def pos_to_num(self, pos, is_stench, s):
         return int(s * (pos[1] * self.size[0] + pos[0] + 1 + is_stench * self.size[0] * self.size[1]))
 
+
 class Agent:
     def __init__(self):
         self.temp_map = Map()
         self.map = self.temp_map.getMap()
-        self.moveset = [1, 2, 3, 4] #1 move, 2 shoot, 3 pick, 4 climb out
+        self.moveset = [1, 2, 3, 4]  # 1 move, 2 shoot, 3 pick, 4 climb out
         self.AKB = Knowlegdesbase((len(self.map), len(self.map[0])))
         self.AKB.makeFormula()
         self.visited = []
@@ -239,7 +250,7 @@ class Agent:
                 self.Shoot(wumpus, self.map[wumpus[0]][wumpus[1]])
                 self.AKB.Remove(danger_pos)
                 print(self.AKB.is_pit(wumpus, self.wumpus_pos))
-                return (do, cur)
+                return (do, wumpus)
 
         next_step = None
         try:
@@ -261,11 +272,11 @@ class Agent:
         cur = self.map[pos[0]][pos[1]]
         if cur == 'G' or cur == 'GB' or cur == 'BG' or cur == 'GS' or cur == 'SG' or cur == 'GBS' or cur == 'GSB' or cur == 'BGS' or cur == 'BSG' or cur == 'SGB' or cur == 'SBG':
             return (self.moveset[2], None, None)
-        
+
         self.Checksafe(pos)
 
         if cur == 'S' or cur == 'SB' or cur == 'BS' or cur == 'GS' or cur == 'SG' or cur == 'GBS' or cur == 'GSB' or cur == 'BGS' or cur == 'BSG' or cur == 'SGB' or cur == 'SBG':
-            if len(self.list_stench) > 1: 
+            if len(self.list_stench) > 1:
                 for w in self.list_stench:
                     check, wumpus_pos = common_adj(pos, w, len(self.map[0]), len(self.map), self.visited)
                     if check == True:
@@ -303,13 +314,21 @@ class Agent:
         cur = pos
         B = False
         S = False
-        if self.map[cur[0]][cur[1]] == 'B' or self.map[cur[0]][cur[1]] == 'SB' or self.map[cur[0]][cur[1]] == 'BS' or self.map[cur[0]][cur[1]] == 'GB' or self.map[cur[0]][cur[1]] == 'BG' or self.map[cur[0]][cur[1]] == 'GBS' or self.map[cur[0]][cur[1]] == 'GSB' or self.map[cur[0]][cur[1]] == 'SGB' or self.map[cur[0]][cur[1]] == 'SBG' or self.map[cur[0]][cur[1]] == 'BGS'  or self.map[cur[0]][cur[1]] == 'BSG':
+        if self.map[cur[0]][cur[1]] == 'B' or self.map[cur[0]][cur[1]] == 'SB' or self.map[cur[0]][cur[1]] == 'BS' or \
+                self.map[cur[0]][cur[1]] == 'GB' or self.map[cur[0]][cur[1]] == 'BG' or self.map[cur[0]][
+            cur[1]] == 'GBS' or self.map[cur[0]][cur[1]] == 'GSB' or self.map[cur[0]][cur[1]] == 'SGB' or \
+                self.map[cur[0]][cur[1]] == 'SBG' or self.map[cur[0]][cur[1]] == 'BGS' or self.map[cur[0]][
+            cur[1]] == 'BSG':
             B = True
-        if self.map[cur[0]][cur[1]] == 'S' or self.map[cur[0]][cur[1]] == 'SB' or self.map[cur[0]][cur[1]] == 'BS' or self.map[cur[0]][cur[1]] == 'GS' or self.map[cur[0]][cur[1]] == 'SG' or self.map[cur[0]][cur[1]] == 'GBS' or self.map[cur[0]][cur[1]] == 'GSB' or self.map[cur[0]][cur[1]] == 'SGB' or self.map[cur[0]][cur[1]] == 'SBG' or self.map[cur[0]][cur[1]] == 'BGS'  or self.map[cur[0]][cur[1]] == 'BSG':
+        if self.map[cur[0]][cur[1]] == 'S' or self.map[cur[0]][cur[1]] == 'SB' or self.map[cur[0]][cur[1]] == 'BS' or \
+                self.map[cur[0]][cur[1]] == 'GS' or self.map[cur[0]][cur[1]] == 'SG' or self.map[cur[0]][
+            cur[1]] == 'GBS' or self.map[cur[0]][cur[1]] == 'GSB' or self.map[cur[0]][cur[1]] == 'SGB' or \
+                self.map[cur[0]][cur[1]] == 'SBG' or self.map[cur[0]][cur[1]] == 'BGS' or self.map[cur[0]][
+            cur[1]] == 'BSG':
             S = True
             if cur not in self.list_stench:
                 self.list_stench.append(cur)
-                
+
         self.AKB.newKB(cur, B, S)
 
     def Move(self, cur, next, danger_pos):
@@ -328,9 +347,11 @@ class Agent:
                 if validCell(pos[0] + k[0], pos[1] + k[1], (len(self.map), len(self.map[0]))):
                     if self.map[pos[0] + k[0]][pos[1] + k[1]] == 'S':
                         self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), '-')
-                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'BS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SB':
+                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'BS' or self.map[pos[0] + k[0]][
+                        pos[1] + k[1]] == 'SB':
                         self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'B')
-                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'GS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SG':
+                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'GS' or self.map[pos[0] + k[0]][
+                        pos[1] + k[1]] == 'SG':
                         self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'G')
                     else:
                         self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'GB')

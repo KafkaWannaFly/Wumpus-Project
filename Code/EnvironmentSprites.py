@@ -1,16 +1,6 @@
 import pygame
-
 from Code import AppData
 from Code.AppData import SpritesData
-
-
-class Obstacle(pygame.sprite.Sprite):
-    def __init__(self, imgPath, pos):
-        pygame.sprite.Sprite.__init__(self)
-        self.image = pygame.image.load(imgPath).convert()
-        self.rect = self.image.get_rect()
-        self.rect = pos
-
 
 BG = 'BG'
 S = 'S'
@@ -22,9 +12,9 @@ W = 'W'
 A = 'A'
 
 
-class EnvironmentSprite(Obstacle):
+class EnvironmentSprite(pygame.sprite.Sprite):
     def __init__(self, imgPath, pos):
-        Obstacle.__init__(self, imgPath, pos)
+        pygame.sprite.Sprite.__init__(self)
         self.image = pygame.image.load(imgPath).convert()
         self.rect = self.image.get_rect()
         self.rect = pos

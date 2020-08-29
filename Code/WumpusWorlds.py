@@ -48,7 +48,7 @@ def main():
         time += deltatime
         if time >= 1:
             time = 0
-            game.run_game()
+            # game.run_demo()
 
         pygame.display.flip()
         deltatime = clock.tick(60) / 1000
