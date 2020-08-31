@@ -13,7 +13,6 @@ class Map:
         self.a_p = agent_pos
         self.width = len(map)
         self.height = len(map[0])
-        self.cave = self.a_p
 
     def getSize(self):
         return (self.width, self.height)
