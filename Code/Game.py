@@ -1,7 +1,7 @@
 from Code.Agent import Agent
 from Code.AppData import MapData, SpritesData, Color, ScreenData, Font
 from Code.Bush import Bush
-from Code.EnvironmentSprites import EnvironmentSprite, G, BG, B
+from Code.EnvironmentSprites import EnvironmentSprite, G, BG, B, W, P
 from Code.Player import *
 
 
@@ -120,7 +120,10 @@ class Game(object):
         self.screen.blit(self.player.image, self.player.rect)
 
     def run(self):
-        curPos = (self.player.get_pos()[1] * 50, self.player.get_pos()[0] * 50)
+        curPos = self.player.get_pos()
+        if P in MapData.map2D[curPos[0]][curPos[1]] or W in MapData.map2D[curPos[0]][curPos[1]]:
+            print('Game over!')
+        curRect = (curPos[1] * 50, curPos[0] * 50)
         (action, next_step), point = self.player.get_next_move()
         myAction = ''
         if action == 0 or action is None:  # stop
@@ -133,7 +136,7 @@ class Game(object):
             print(myAction)
 
             nextPos = (next_step[1] * 50, next_step[0] * 50)
-            self.move_player(curPos, nextPos)
+            self.move_player(curRect, nextPos)
         elif action == 2:  # shoot wumpus
             myAction = 'Shoot Wumpus at ' + str(next_step)
             print(myAction)
@@ -160,6 +163,7 @@ class Game(object):
             self.update_draw()
 
         self.update()
+        self.text_action = self.action.render('', True, Color.BLUE_CORAL)
         self.text_action = self.action.render(myAction, True, Color.BLUE_CORAL)
         print('Point: ' + str(self.player.agent.point))
         self.display_score()
@@ -203,12 +207,13 @@ class Game(object):
         wumpusStr = wumpusStr.replace('W', '')
         wumpusSprite = self.find_sprite((j * 50, i * 50), SpritesData.wumpus)
         if wumpusStr == '':
+            wumpusStr = '-'
             wumpusSprite.set_image(SpritesData.background)
         else:
             self.all_sprites.clear(self.screen, wumpusSprite.image)
             wumpusSprite.kill()
 
-        # Remove its S from map data
+        # Remove its Stench from map data
         if i - 1 >= 0:
             near_i, near_j = i - 1, j
             stenchStr = MapData.map2D[near_i][near_j]

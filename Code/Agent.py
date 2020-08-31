@@ -6,7 +6,7 @@ from pysat.solvers import Glucose3
 
 #Map handle part
 #-----------------------------------------------------
-from AppData import MapData
+from Code.AppData import MapData
 
 
 class Map:

@@ -1,0 +1,11 @@
+10
+-.-.-.-.-.-.-.-.-.-
+-.-.S.S.S.S.S.S.-.-
+-.S.SW.SW.SW.SW.SW.SW.S.-
+-.S.SW.SG.GS.GS.GS.SW.S.-
+-.S.SW.SG.G.G.GS.SW.S.-
+-.S.SW.SG.G.G.GS.SW.S.-
+-.S.SW.SG.G.G.GS.SW.S.-
+-.S.SW.SG.G.G.GS.SW.S.-
+-.S.SW.SG.G.G.GS.SW.S.-
+A.S.WS.SG.G.G.GS.WS.S.-

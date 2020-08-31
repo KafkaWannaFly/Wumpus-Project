@@ -2,7 +2,7 @@ import pygame
 from Code import AppData
 from Code.AppData import SpritesData
 
-BG = 'BG'
+BG = '-'
 S = 'S'
 B = 'B'
 BS = B + S

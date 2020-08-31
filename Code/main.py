@@ -51,7 +51,7 @@ def main():
                 sys.exit()
 
         time += deltatime
-        if time >= 0.5:
+        if time >= 0.2:
             time = 0
             game.run()
 
