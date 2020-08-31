@@ -4,22 +4,24 @@ from Code.AppData import *
 from Code.Game import Game
 from Code.Player import Player
 
+
 def test_the_agent():
     a = Agent()
     x, y = a.createAgent()
-    print(x, end = "\n")
-    print(y, end = "\n")
+    print(x, end="\n")
+    print(y, end="\n")
 
     while True:
         x, y = a.calPoint()
         if x != None:
-            print(x, end = "\n")
-            print(y, end = "\n")
+            print(x, end="\n")
+            print(y, end="\n")
             if x[0] == 2:
                 for i in a.map:
                     print(i, end='\n')
         else:
             break
+
 
 def main():
     pygame.init()
@@ -34,6 +36,8 @@ def main():
 
     background = pygame.Surface((ScreenData.Width, ScreenData.Height))
 
+    MapData.path = input()
+
     game = Game(screen)
     game.generate_env()
 
@@ -46,9 +50,9 @@ def main():
             if event.type == pygame.QUIT: sys.exit()
 
         time += deltatime
-        if time >= 1:
+        if time >= 0.2:
             time = 0
-            # game.run_demo()
+            game.run()
 
         pygame.display.flip()
         deltatime = clock.tick(60) / 1000

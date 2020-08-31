@@ -19,7 +19,7 @@ class SpritesData():
 
 
 class MapData():
-    path = "../Maps/map1.txt"
+    path = None
     map2D = []
     size = 10
 

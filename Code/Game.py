@@ -1,7 +1,7 @@
 from Code.Agent import Agent
 from Code.AppData import MapData, SpritesData
 from Code.Bush import Bush
-from Code.EnvironmentSprites import EnvironmentSprite, G
+from Code.EnvironmentSprites import EnvironmentSprite, G, BG, B
 from Code.Player import *
 
 
@@ -36,7 +36,6 @@ class Game(object):
     def generate_env(self):
         for i in range(MapData.size):
             for j in range(MapData.size):
-                tmp = None
                 pos = (j * 50, i * 50)
                 if '-' in MapData.map2D[i][j]:
                     env = EnvironmentSprite(SpritesData.background, pos)
@@ -64,13 +63,10 @@ class Game(object):
                 if 'A' in MapData.map2D[i][j]:
                     agent = Player(SpritesData.bug_up, pos)
                     self.player = agent
-                    self.all_sprites.add(agent)
-                if tmp is not None:
-                    self.screen.blit(tmp, (j * 50, i * 50))
 
                 bush = Bush((j * 50, i * 50))
                 self.bushes.add(bush)
-
+        self.all_sprites.add(self.player)
         # self.screen.blit(self.groundstart, self.player.rect)
         # self.screen.blit(self.player.image, self.player.rect)
 
@@ -120,45 +116,141 @@ class Game(object):
         self.screen.blit(self.player.image, self.player.rect)
 
     def run(self):
-        (move, next_step), point = self.player.get_next_move()
-        if move == 1:  # simple move
-            pass
-        elif move == 2:  # shoot wumpus
-            pass
-        elif move == 3:  # pick gold
-            pass
+        curPos = (self.player.get_pos()[1] * 50, self.player.get_pos()[0] * 50)
+        (action, next_step), point = self.player.get_next_move()
+        if action == 0 or action is None:  # stop
+            print('Done!')
+            self.is_over = True
+        elif action == 1:  # simple move
+            nextPos = (next_step[1] * 50, next_step[0] * 50)
+            self.move_player(curPos, nextPos)
+        elif action == 2:  # shoot wumpus
+            print('Shoot Wumpus!')
+            # next_step is wumpus position
+            self.remove_wumpus(next_step)
+        elif action == 3:  # pick gold
+            print('Pick up gold')
+            # next_step is gold position
+            goldPos = next_step[1] * 50, next_step[0] * 50
+            sprite = self.find_sprite(goldPos, SpritesData.gold)
+
+            i, j = next_step[0], next_step[1]
+            goldStr = MapData.map2D[i][j]
+            goldStr = goldStr.replace('G', '')
+
+            if goldStr == '':  # if there is nothing, replace with a background
+                goldStr = '-'
+                sprite.set_image(SpritesData.background)
+            else:  # If there are somethings, just remove gold sprite
+                self.all_sprites.clear(self.screen, sprite.image)
+                sprite.kill()
+            self.update_draw()
+        self.update()
+        print('Point: ' + str(self.player.agent.point))
+
+    def move_player(self, curPos, nextPos):
+        self.remove_bush(nextPos)
+        self.player.move_to(nextPos)
+
+        self.all_sprites.draw(self.screen)
+        self.bushes.draw(self.screen)
+
+    def find_sprite(self, pos, spriteData=None):
+        sprites = self.sprites()
+        sprite = None
+        for i in sprites:
+            if i.rect == pos:
+                if spriteData is None:
+                    sprite = i
+                    break
+                else:
+                    if i.imagePath == spriteData:
+                        sprite = i
+                        break
+        return sprite
 
     def sprites(self):
         return self.all_sprites.sprites()
 
-    def bushes(self):
-        return self.bushes
+    def get_bushes_sprites(self):
+        return self.bushes.sprites()
 
-    def replace_sprite(self, pos, path, state=None):
-        sprites = self.sprites()
-        bushes = self.bushes
-        sprite = None
-        for i, j in zip(sprites, bushes):
-            if i.rect == pos:
-                sprite = i
-            if j.rect == pos:
-                self.bushes.clear(self.screen, j.image)
-                j.kill()
-        if sprite is not None:
-            sprite.set_image(path)
-            self.all_sprites.draw(self.screen)
-            self.bushes.draw(self.screen)
+    def remove_wumpus(self, pos):
+        # Remove wumpus itself
+        i, j = pos[0], pos[1]
+        wumpusStr = MapData.map2D[i][j]
+        wumpusStr = wumpusStr.replace('W', '')
+        wumpusSprite = self.find_sprite((j * 50, i * 50), SpritesData.wumpus)
+        if wumpusStr == '':
+            wumpusSprite.set_image(SpritesData.background)
         else:
-            print('replace_sprite: null exception')
-        if state is not None:
-            sprite.set_state(state)
+            self.all_sprites.clear(self.screen, wumpusSprite.image)
+            wumpusSprite.kill()
+
+        # Remove its S from map data
+        if i - 1 >= 0:
+            near_i, near_j = i - 1, j
+            stenchStr = MapData.map2D[near_i][near_j]
+            stenchStr = stenchStr.replace('S', '')
+            if stenchStr == '':
+                stenchStr = '-'
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                stenchSprite.set_state(BG)
+            elif stenchStr == 'B':
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
+                stenchSprite.set_state(B)
+        if i + 1 < MapData.size:
+            near_i, near_j = i + 1, j
+            stenchStr = MapData.map2D[near_i][near_j]
+            stenchStr = stenchStr.replace('S', '')
+            if stenchStr == '':
+                stenchStr = '-'
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                stenchSprite.set_state(BG)
+            elif stenchStr == 'B':
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
+                stenchSprite.set_state(B)
+        if j - 1 >= 0:
+            near_i, near_j = i, j - 1
+            stenchStr = MapData.map2D[near_i][near_j]
+            stenchStr = stenchStr.replace('S', '')
+            if stenchStr == '':
+                stenchStr = '-'
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                stenchSprite.set_state(BG)
+            elif stenchStr == 'B':
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
+                stenchSprite.set_state(B)
+        if j + 1 < MapData.size:
+            near_i, near_j = i, j + 1
+            stenchStr = MapData.map2D[near_i][near_j]
+            stenchStr = stenchStr.replace('S', '')
+            if stenchStr == '':
+                stenchStr = '-'
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                stenchSprite.set_state(BG)
+            elif stenchStr == 'B':
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
+                stenchSprite.set_state(B)
 
     def remove_bush(self, pos):
-        sprites = self.sprites()
-        bushes = self.bushes
-        for sprite, bush in zip(sprites, bushes):
-            if bush.rect == pos and sprite.rect == pos:
-                self.bushes.clear(self.screen, bush.image)
-                bush.kill()
+        bushes = self.get_bushes_sprites()
+        bush = None
+        for i in bushes:
+            if i.rect == pos:
+                bush = i
+                break
+        if bush is not None:
+            self.bushes.clear(self.screen, bush.image)
+            bush.kill()
+
         self.all_sprites.draw(self.screen)
-        bushes.draw(self.screen)
+        self.bushes.draw(self.screen)
+
+    def update(self):
+        self.all_sprites.update()
+        self.bushes.update()
+
+    def update_draw(self):
+        self.all_sprites.draw(self.screen)
+        self.bushes.draw(self.screen)

@@ -6,6 +6,9 @@ from pysat.solvers import Glucose3
 
 #Map handle part
 #-----------------------------------------------------
+from Code.AppData import MapData
+
+
 class Map:
     def __init__(self):
         map, agent_pos = readFile()
@@ -27,7 +30,7 @@ class Map:
         self.map[pos[0]][pos[1]] = status
 
 def readFile():
-    path = "map1.txt"
+    path = MapData.path
     file = open(path, "r")
     size = file.readline()
     size = int(size.split()[0])
@@ -367,7 +370,7 @@ class Agent:
     def calPoint(self):
         move, next_step = self.Solving()
         if move == 0:
-            return None, None
+            return (None, None), self.point
         elif move == 1:
             self.point -= 10
         elif move == 3:
