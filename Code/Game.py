@@ -121,11 +121,12 @@ class Game(object):
 
     def run(self):
         curPos = self.player.get_pos()
-        if P in MapData.map2D[curPos[0]][curPos[1]] or W in MapData.map2D[curPos[0]][curPos[1]]:
-            print('Game over!')
-
         curRect = (curPos[1] * 50, curPos[0] * 50)
         (action, next_step), point = self.player.get_next_move()
+
+        if P in MapData.map2D[curPos[0]][curPos[1]] or W in MapData.map2D[curPos[0]][curPos[1]]:
+            print('Game over!')
+            self.is_over = True
 
         myAction = ''
         if action == 0 or action is None:  # stop
@@ -163,6 +164,7 @@ class Game(object):
                 self.all_sprites.clear(self.screen, sprite.image)
                 sprite.kill()
             self.update_draw()
+
 
         self.update()
         self.text_action = self.action.render(myAction, True, Color.BLUE_CORAL)
@@ -208,10 +210,10 @@ class Game(object):
         wumpusStr = MapData.map2D[i][j]
         if 'W' not in wumpusStr:
             return
-        wumpusStr = wumpusStr.replace('W', '')
+        MapData.map2D[i][j] = wumpusStr.replace('W', '')
         wumpusSprite = self.find_sprite((j * 50, i * 50), SpritesData.wumpus)
-        if wumpusStr == '':
-            wumpusStr = '-'
+        if MapData.map2D[i][j] == '':
+            MapData.map2D[i][j] = '-'
             wumpusSprite.set_image(SpritesData.background)
         else:
             self.all_sprites.clear(self.screen, wumpusSprite.image)
@@ -221,12 +223,12 @@ class Game(object):
         if i - 1 >= 0:
             near_i, near_j = i - 1, j
             stenchStr = MapData.map2D[near_i][near_j]
-            stenchStr = stenchStr.replace('S', '')
-            if stenchStr == '':
-                stenchStr = '-'
+            MapData.map2D[near_i][near_j] = stenchStr.replace('S', '')
+            if MapData.map2D[near_i][near_j] == '':
+                MapData.map2D[near_i][near_j] = '-'
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
                 stenchSprite.set_state(BG)
-            elif stenchStr == 'B':
+            elif MapData.map2D[near_i][near_j] == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
             else:
@@ -237,12 +239,12 @@ class Game(object):
         if i + 1 < MapData.size:
             near_i, near_j = i + 1, j
             stenchStr = MapData.map2D[near_i][near_j]
-            stenchStr = stenchStr.replace('S', '')
-            if stenchStr == '':
-                stenchStr = '-'
+            MapData.map2D[near_i][near_j] = stenchStr.replace('S', '')
+            if MapData.map2D[near_i][near_j] == '':
+                MapData.map2D[near_i][near_j] = '-'
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
                 stenchSprite.set_state(BG)
-            elif stenchStr == 'B':
+            elif MapData.map2D[near_i][near_j] == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
             else:
@@ -253,12 +255,12 @@ class Game(object):
         if j - 1 >= 0:
             near_i, near_j = i, j - 1
             stenchStr = MapData.map2D[near_i][near_j]
-            stenchStr = stenchStr.replace('S', '')
-            if stenchStr == '':
-                stenchStr = '-'
+            MapData.map2D[near_i][near_j] = stenchStr.replace('S', '')
+            if MapData.map2D[near_i][near_j] == '':
+                MapData.map2D[near_i][near_j] = '-'
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
                 stenchSprite.set_state(BG)
-            elif stenchStr == 'B':
+            elif MapData.map2D[near_i][near_j] == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
             else:
@@ -268,12 +270,12 @@ class Game(object):
         if j + 1 < MapData.size:
             near_i, near_j = i, j + 1
             stenchStr = MapData.map2D[near_i][near_j]
-            stenchStr = stenchStr.replace('S', '')
-            if stenchStr == '':
-                stenchStr = '-'
+            MapData.map2D[near_i][near_j] = stenchStr.replace('S', '')
+            if MapData.map2D[near_i][near_j] == '':
+                MapData.map2D[near_i][near_j] = '-'
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
                 stenchSprite.set_state(BG)
-            elif stenchStr == 'B':
+            elif MapData.map2D[near_i][near_j] == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
             else:
