@@ -6,7 +6,7 @@ from pysat.solvers import Glucose3
 
 #Map handle part
 #-----------------------------------------------------
-from Code.AppData import MapData
+from AppData import MapData
 
 
 class Map:
@@ -251,8 +251,9 @@ class Agent:
             elif do == 2:
                 wumpus = safe_pos.pop()
                 self.wumpus_pos.append(wumpus)
-                self.Shoot(wumpus, self.map[wumpus[0]][wumpus[1]])
                 self.Remove(danger_pos)
+                self.Shoot(wumpus, self.map[wumpus[0]][wumpus[1]])
+                self.visited.append(wumpus)
                 return (do, wumpus)
 
         next_step = None
@@ -283,7 +284,8 @@ class Agent:
         if cur == 'S' or cur == 'SB' or cur == 'BS' or cur == 'GS' or cur == 'SG' or cur == 'GBS' or cur == 'GSB' or cur == 'BGS' or cur == 'BSG' or cur == 'SGB' or cur == 'SBG':
             if len(self.list_stench) > 1: 
                 for w in self.list_stench:
-                    check, wumpus_pos = common_adj(pos, w, len(self.map[0]), len(self.map), self.visited)
+                    if w != pos:
+                        check, wumpus_pos = common_adj(pos, w, len(self.map[0]), len(self.map), self.visited)
                     if check == True:
                         list_need_to_del = [wumpus_pos, pos, w]
                         return (self.shoot, [wumpus_pos], list_need_to_del)
@@ -336,22 +338,33 @@ class Agent:
             return path[0]
         return None
 
+    def still_have_wumpus(self, pos):
+        x = [(1, 0), (-1, 0), (0, 1), (0, -1)]
+        for k in x:
+            if validCell(pos[0] + k[0], pos[1] + k[1], (len(self.map), len(self.map[0]))) and (self.map[pos[0] + k[0]][pos[1] + k[1]] == 'W' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SW' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'WS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'BW' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'WB'):
+                return True
+        return False
+
     def Shoot(self, pos, state):
         x = [(1, 0), (-1, 0), (0, 1), (0, -1)]
         if state == 'W':
             self.temp_map.updateMap(pos, '-')
             for k in x:
                 if validCell(pos[0] + k[0], pos[1] + k[1], (len(self.map), len(self.map[0]))):
-                    if self.map[pos[0] + k[0]][pos[1] + k[1]] == 'S':
-                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), '-')
-                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'BS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SB':
-                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'B')
-                    elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'GS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SG':
-                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'G')
+                    check = self.still_have_wumpus((pos[0] + k[0], pos[1] + k[1]))
+                    if check == False:
+                        if self.map[pos[0] + k[0]][pos[1] + k[1]] == 'S':
+                            self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), '-')
+                        elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'BS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SB':
+                            self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'B')
+                        elif self.map[pos[0] + k[0]][pos[1] + k[1]] == 'GS' or self.map[pos[0] + k[0]][pos[1] + k[1]] == 'SG':
+                            self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'G')
+                        else:
+                            self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'GB')
+                        if (pos[0] + k[0], pos[1] + k[1]) in self.list_stench:
+                            self.list_stench.remove((pos[0] + k[0], pos[1] + k[1]))
                     else:
-                        self.temp_map.updateMap((pos[0] + k[0], pos[1] + k[1]), 'GB')
-                    if (pos[0] + k[0], pos[1] + k[1]) in self.list_stench:
-                        self.list_stench.remove((pos[0] + k[0], pos[1] + k[1]))
+                        continue
                 else:
                     continue
         else:
