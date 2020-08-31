@@ -1,5 +1,5 @@
 from Code.Agent import Agent
-from Code.AppData import MapData, SpritesData
+from Code.AppData import MapData, SpritesData, Color, ScreenData, Font
 from Code.Bush import Bush
 from Code.EnvironmentSprites import EnvironmentSprite, G, BG, B
 from Code.Player import *
@@ -21,6 +21,10 @@ class Game(object):
 
         self.bushes = pygame.sprite.Group()
         self.all_sprites = pygame.sprite.Group()
+
+        self.score = pygame.font.Font(Font.consolas, 25)
+        self.action = pygame.font.Font(Font.consolas, 20)
+        self.text_action = None
 
     def read_map_data(self):
         file = open(MapData.path, "r")
@@ -118,18 +122,23 @@ class Game(object):
     def run(self):
         curPos = (self.player.get_pos()[1] * 50, self.player.get_pos()[0] * 50)
         (action, next_step), point = self.player.get_next_move()
+        myAction = ''
         if action == 0 or action is None:  # stop
             print('Done!')
+            myAction = 'Done!'
             self.is_over = True
         elif action == 1:  # simple move
+            myAction = 'Move to ' + str((next_step[0], next_step[1]))
             nextPos = (next_step[1] * 50, next_step[0] * 50)
             self.move_player(curPos, nextPos)
         elif action == 2:  # shoot wumpus
             print('Shoot Wumpus!')
+            myAction = 'Shoot Wumpus!'
             # next_step is wumpus position
             self.remove_wumpus(next_step)
         elif action == 3:  # pick gold
             print('Pick up gold')
+            myAction = 'Pick up gold'
             # next_step is gold position
             goldPos = next_step[1] * 50, next_step[0] * 50
             sprite = self.find_sprite(goldPos, SpritesData.gold)
@@ -146,7 +155,14 @@ class Game(object):
                 sprite.kill()
             self.update_draw()
         self.update()
+        self.text_action = self.action.render(myAction, True, Color.BLUE_CORAL)
         print('Point: ' + str(self.player.agent.point))
+        self.display_score()
+
+    def display_score(self):
+        text_score = self.score.render("Score: " + str(self.player.agent.point), True, Color.BLUE_CORAL)
+        self.screen.blit(text_score, (10, 10))
+        self.screen.blit(self.text_action, (10, 35))
 
     def move_player(self, curPos, nextPos):
         self.remove_bush(nextPos)

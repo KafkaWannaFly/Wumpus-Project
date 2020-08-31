@@ -24,3 +24,15 @@ class MapData():
     size = 10
 
 
+class Color():
+    BLACK = (0, 0, 0)
+    WHITE = (255, 255, 255)
+    BLUE = (0, 0, 255)
+    RED = (255, 0, 0)
+    BLUE_CORAL = (112, 205, 212)
+    PURPLE = (255, 0, 255)
+    YELLOW = (255, 255, 0)
+
+
+class Font():
+    consolas = '../Fonts/consola.ttf'

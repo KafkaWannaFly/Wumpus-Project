@@ -13,7 +13,7 @@ def test_the_agent():
 
     while True:
         x, y = a.calPoint()
-        if x != None:
+        if x is not None:
             print(x, end="\n")
             print(y, end="\n")
             if x[0] == 2:
@@ -36,7 +36,7 @@ def main():
 
     background = pygame.Surface((ScreenData.Width, ScreenData.Height))
 
-    MapData.path = input()
+    MapData.path = input('Path to map file: ')
 
     game = Game(screen)
     game.generate_env()
@@ -47,10 +47,11 @@ def main():
 
     while not game.is_over:
         for event in pygame.event.get():
-            if event.type == pygame.QUIT: sys.exit()
+            if event.type == pygame.QUIT:
+                sys.exit()
 
         time += deltatime
-        if time >= 0.2:
+        if time >= 0.5:
             time = 0
             game.run()
 
