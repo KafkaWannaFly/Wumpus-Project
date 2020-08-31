@@ -123,8 +123,10 @@ class Game(object):
         curPos = self.player.get_pos()
         if P in MapData.map2D[curPos[0]][curPos[1]] or W in MapData.map2D[curPos[0]][curPos[1]]:
             print('Game over!')
+
         curRect = (curPos[1] * 50, curPos[0] * 50)
         (action, next_step), point = self.player.get_next_move()
+
         myAction = ''
         if action == 0 or action is None:  # stop
             myAction = 'Done!'
@@ -138,7 +140,7 @@ class Game(object):
             nextPos = (next_step[1] * 50, next_step[0] * 50)
             self.move_player(curRect, nextPos)
         elif action == 2:  # shoot wumpus
-            myAction = 'Shoot Wumpus at ' + str(next_step)
+            myAction = 'Shoot Wumpus at: ' + str(next_step)
             print(myAction)
             # next_step is wumpus position
             self.remove_wumpus(next_step)
@@ -163,7 +165,6 @@ class Game(object):
             self.update_draw()
 
         self.update()
-        self.text_action = self.action.render('', True, Color.BLUE_CORAL)
         self.text_action = self.action.render(myAction, True, Color.BLUE_CORAL)
         print('Point: ' + str(self.player.agent.point))
         self.display_score()
@@ -171,6 +172,7 @@ class Game(object):
     def display_score(self):
         text_score = self.score.render("Score: " + str(self.player.agent.point), True, Color.BLUE_CORAL)
         self.screen.blit(text_score, (10, 10))
+
         self.screen.blit(self.text_action, (10, 35))
 
     def move_player(self, curPos, nextPos):
@@ -204,6 +206,8 @@ class Game(object):
         # Remove wumpus itself
         i, j = pos[0], pos[1]
         wumpusStr = MapData.map2D[i][j]
+        if 'W' not in wumpusStr:
+            return
         wumpusStr = wumpusStr.replace('W', '')
         wumpusSprite = self.find_sprite((j * 50, i * 50), SpritesData.wumpus)
         if wumpusStr == '':
@@ -225,6 +229,11 @@ class Game(object):
             elif stenchStr == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
+            else:
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                if stenchSprite is not None:
+                    stenchSprite.set_state(BG)
+
         if i + 1 < MapData.size:
             near_i, near_j = i + 1, j
             stenchStr = MapData.map2D[near_i][near_j]
@@ -236,6 +245,11 @@ class Game(object):
             elif stenchStr == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
+            else:
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                if stenchSprite is not None:
+                    stenchSprite.set_state(BG)
+
         if j - 1 >= 0:
             near_i, near_j = i, j - 1
             stenchStr = MapData.map2D[near_i][near_j]
@@ -247,6 +261,10 @@ class Game(object):
             elif stenchStr == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
+            else:
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                if stenchSprite is not None:
+                    stenchSprite.set_state(BG)
         if j + 1 < MapData.size:
             near_i, near_j = i, j + 1
             stenchStr = MapData.map2D[near_i][near_j]
@@ -258,6 +276,10 @@ class Game(object):
             elif stenchStr == 'B':
                 stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_bs)
                 stenchSprite.set_state(B)
+            else:
+                stenchSprite = self.find_sprite((near_j * 50, near_i * 50), SpritesData.background_s)
+                if stenchSprite is not None:
+                    stenchSprite.set_state(BG)
 
     def remove_bush(self, pos):
         bushes = self.get_bushes_sprites()
