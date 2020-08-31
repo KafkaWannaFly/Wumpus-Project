@@ -4,6 +4,8 @@ import sys
 from heapq import heappush, heappop
 from pysat.solvers import Glucose3
 
+#Map handle part
+#-----------------------------------------------------
 class Map:
     def __init__(self):
         map, agent_pos = readFile()
@@ -14,7 +16,7 @@ class Map:
         self.cave = self.a_p
 
     def getSize(self):
-        return tuple(self.width, self.height)
+        return (self.width, self.height)
 
     def getMap(self):
         return self.map
@@ -47,7 +49,10 @@ def readFile():
         map[agent_pos[0]][agent_pos[1]] = map[agent_pos[0]][agent_pos[1]].replace('-', '')
 
     return map, agent_pos
+#-----------------------------------------------------
 
+#Path finding base on A*
+#-----------------------------------------------------
 def add_adjacent(matrix, width, height):
     dict = {}
     k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
@@ -140,28 +145,48 @@ def A_star(maze, cur_pos, des_pos, danger_pos):
                 heappush(frontier, ((cost + 1) + manhattan_distance(adjacent, des_pos), adjacent))
                 if adjacent not in explored:
                     parent_nodes[adjacent] = current_node
+#-----------------------------------------------------
 
-
+#Check the cell whether is valid or not
+#-----------------------------------------------------
 def validCell(i, j, shape):
     return 0 <= i and i < shape[0] and 0 <= j and j < shape[1]
+#-----------------------------------------------------
 
-class Knowlegdesbase:
-    def __init__(self, maps_size):
-        self.DangerFormula = []
-        self.wumpus = Glucose3()
+#Agent handle, using CNF to find the danger and Glucose3() to sovle the CNF clause
+#-----------------------------------------------------
+class Agent:
+    def __init__(self):
+        self.temp_map = Map()
+        self.map = self.temp_map.getMap()
+        self.move = 1
+        self.shoot = 2
+        self.pick = 3
+        self.sur = 4
+        self.visited = []
+        self.doing = []
+        self.list_stench = []
+        self.wumpus_pos = []
+        self.climb_out = False
+        self.point = 0
+        self.agent_pos = self.temp_map.getAgentPos()
+        self.spawn = self.temp_map.getAgentPos()
+        self.DangerFormula = []     #This is the KB of the AI Agent
+        self.wumpus = Glucose3()    
         self.pit = Glucose3()
-        self.size = maps_size
+        self.size = self.temp_map.getSize()
+        self.makeFormula()          #Make the formula before add clause to solve CNF
 
     def is_wumpus(self, pos):
         return self.wumpus.solve([self.pos_to_num(pos, 0, 1)])
 
-    def is_pit(self, pos, list_wumpus):
+    def is_pit(self, pos, list_wumpus):     #If there is a wumpus, it can't be a Pit
         if pos in list_wumpus:
             return False
         else:
             return self.pit.solve([self.pos_to_num(pos, 0, 1)])
 
-    def makeFormula(self):
+    def makeFormula(self):      #Make the rules for the agent to find the wumpus and the pit
         k = [(1, 0), (-1, 0), (0, 1), (0, -1)]
 
         for i in range(self.size[0]):
@@ -209,25 +234,6 @@ class Knowlegdesbase:
     def pos_to_num(self, pos, is_stench, s):
         return int(s * (pos[1] * self.size[0] + pos[0] + 1 + is_stench * self.size[0] * self.size[1]))
 
-class Agent:
-    def __init__(self):
-        self.temp_map = Map()
-        self.map = self.temp_map.getMap()
-        self.move = 1
-        self.shoot = 2
-        self.pick = 3
-        self.sur = 4
-        self.AKB = Knowlegdesbase((len(self.map), len(self.map[0])))
-        self.AKB.makeFormula()
-        self.visited = []
-        self.doing = []
-        self.list_stench = []
-        self.wumpus_pos = []
-        self.climb_out = False
-        self.point = 0
-        self.agent_pos = self.temp_map.getAgentPos()
-        self.spawn = self.temp_map.getAgentPos()
-
     def Solving(self):
         cur = self.agent_pos
         self.visited.append(cur)
@@ -244,7 +250,7 @@ class Agent:
                 wumpus = safe_pos.pop()
                 self.wumpus_pos.append(wumpus)
                 self.Shoot(wumpus, self.map[wumpus[0]][wumpus[1]])
-                self.AKB.Remove(danger_pos)
+                self.Remove(danger_pos)
                 return (do, wumpus)
 
         next_step = None
@@ -287,10 +293,10 @@ class Agent:
             temp = (pos[0] + i[0], pos[1] + i[1])
             if temp in self.visited or not validCell(temp[0], temp[1], (len(self.map), len(self.map[0]))):
                 continue
-            if self.AKB.is_pit(temp, self.wumpus_pos):
+            if self.is_pit(temp, self.wumpus_pos):
                 danger_pos.append(temp)
                 continue
-            elif self.AKB.is_wumpus(temp):
+            elif self.is_wumpus(temp):
                 danger_pos.append(temp)
                 continue
             safe_pos.append(temp)
@@ -318,7 +324,7 @@ class Agent:
             if cur not in self.list_stench:
                 self.list_stench.append(cur)
                 
-        self.AKB.newKB(cur, B, S)
+        self.newKB(cur, B, S)
 
     def Move(self, cur, next, danger_pos):
         temp = self.map
