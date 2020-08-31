@@ -124,21 +124,25 @@ class Game(object):
         (action, next_step), point = self.player.get_next_move()
         myAction = ''
         if action == 0 or action is None:  # stop
-            print('Done!')
             myAction = 'Done!'
+            print(myAction)
+
             self.is_over = True
         elif action == 1:  # simple move
             myAction = 'Move to ' + str((next_step[0], next_step[1]))
+            print(myAction)
+
             nextPos = (next_step[1] * 50, next_step[0] * 50)
             self.move_player(curPos, nextPos)
         elif action == 2:  # shoot wumpus
-            print('Shoot Wumpus!')
-            myAction = 'Shoot Wumpus!'
+            myAction = 'Shoot Wumpus at ' + str(next_step)
+            print(myAction)
             # next_step is wumpus position
             self.remove_wumpus(next_step)
         elif action == 3:  # pick gold
-            print('Pick up gold')
             myAction = 'Pick up gold'
+            print(myAction)
+
             # next_step is gold position
             goldPos = next_step[1] * 50, next_step[0] * 50
             sprite = self.find_sprite(goldPos, SpritesData.gold)
@@ -154,6 +158,7 @@ class Game(object):
                 self.all_sprites.clear(self.screen, sprite.image)
                 sprite.kill()
             self.update_draw()
+
         self.update()
         self.text_action = self.action.render(myAction, True, Color.BLUE_CORAL)
         print('Point: ' + str(self.player.agent.point))
